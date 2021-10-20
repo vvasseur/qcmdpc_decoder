@@ -1,0 +1,5 @@
+*.d
+*.o
+*.gcda
+qcmdpc_decoder
+qcmdpc_decoder_avx2
