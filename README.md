@@ -8,7 +8,7 @@ See <https://tel.archives-ouvertes.fr/tel-03254461/>.
 ## Usage
 
 ```sh
-./qcmdpc_decoder_avx2 [OPTIONS]
+./qcmdpc_decoder [OPTIONS]
 
 -i, --max-iter         maximum number of iterations
 -N, --rounds           number of rounds to perform
@@ -30,7 +30,7 @@ SIGTERM.
 ## Example
 
 ```sh
-$ ./qcmdpc_decoder_avx2 -T4 -N100000
+$ ./qcmdpc_decoder -T4 -N100000
 -DINDEX=2 -DBLOCK_LENGTH=10007 -DBLOCK_WEIGHT=71 -DERROR_WEIGHT=134 -DOUROBOROS=0 -DWEAK=0 -DWEAK_P=0 -DERROR_FLOOR=0 -DERROR_FLOOR_P=0 -DTHRESHOLD_C0=13.53 -DTHRESHOLD_C1=0.0069722 -DALGO=GRAY_BGF
 58907 5:20339 7:38396 9:163 11:6 >100:4
 100000 5:34466 7:65226 9:294 11:10 >100:4
@@ -56,7 +56,7 @@ For speed, parameters are chosen at compile time. They are:
 
 Algorithm and their respective parameters can be chosen among:
 - `ALGO = BACKFLIP`: Backflip with an affine ttl
-    * `TTL_C0`, `TTL_C1`: affine ttl function coefficiens
+    * `TTL_C0`, `TTL_C1`: affine ttl function coefficients
     * `TTL_SATURATE`: ttl saturation value
 - `ALGO = BACKFLIP2`: Backflip with multiple thresholds
     * `THRESHOLD_A0`, `THRESHOLD_A1`, `THRESHOLD_A2`, `THRESHOLD_A3`, `THRESHOLD_A4`: ttl alpha values
@@ -73,10 +73,10 @@ Algorithm and their respective parameters can be chosen among:
 
 Build with, for example:
 ```sh
-$ EXTRA='-DINDEX=2 -DBLOCK_LENGTH=12323 -DBLOCK_WEIGHT=71 -DERROR_WEIGHT=134 -DOUROBOROS=0 -DWEAK=0 -DWEAK_P=0 -DERROR_FLOOR=0 -DERROR_FLOOR_P=0 -DTHRESHOLD_C0=13.53 -DTHRESHOLD_C1=0.0069722 -DALGO=GRAY_BGB' make -B
+$ cmake -B build/ -DINDEX=2 -DBLOCK_LENGTH=12323 -DBLOCK_WEIGHT=71 -DERROR_WEIGHT=134 -DOUROBOROS=0 -DWEAK=0 -DWEAK_P=0 -DERROR_FLOOR=0 -DERROR_FLOOR_P=0 -DTHRESHOLD_C0=13.53 -DTHRESHOLD_C1=0.0069722 -DALGO=GRAY_BGB && cmake --build build/
 ```
 
-Executable name is `qcmdpc_decoder_avx2`.
+Executable name is `qcmdpc_decoder` located in the `build` directory.
 
 
 ## Parameters presets
@@ -91,39 +91,37 @@ Presets are available for BIKE parameters:
 
 Build with, for example:
 ```sh
-$ EXTRA='-DPRESET_CCA=192 -DALGO=BP' make -B noavx
+$ cmake -B build/ -DPRESET_CCA=192 -DALGO=BP && cmake --build build/
 ```
 
 
 ## Profile Guided Optimization
 
-GCC does a good job at Profile Guided Optimization.
+GCC and Clang do a good job at Profile Guided Optimization.
 To use it, first compile with, for example:
 ```sh
-$ EXTRA='-DINDEX=2 -DBLOCK_LENGTH=12323 -DBLOCK_WEIGHT=71 -DERROR_WEIGHT=134 -DALGO=BACKFLIP2' make -B PROFGEN=1
+$ cmake -B build/ -DINDEX=2 -DBLOCK_LENGTH=12323 -DBLOCK_WEIGHT=71 -DERROR_WEIGHT=134 -DALGO=BACKFLIP2 -DPGO=GEN && cmake --build build/
 ```
 
 Run the program on a sample with, for example (for 8 iterations, 8 threads and
 a sample of size 100000):
 ```sh
-$ ./qcmdpc_decoder_avx2 -i8 -T8 -N100000
+$ build/qcmdpc_decoder -i8 -T8 -N100000
 ```
 
 Recompile to use PGO:
 ```sh
-$ EXTRA='-DINDEX=2 -DBLOCK_LENGTH=12323 -DBLOCK_WEIGHT=71 -DERROR_WEIGHT=134 -DALGO=BACKFLIP2' make -B PROFUSE=1
+$ cmake -B build/ -DINDEX=2 -DBLOCK_LENGTH=12323 -DBLOCK_WEIGHT=71 -DERROR_WEIGHT=134 -DALGO=BACKFLIP2 -DPGO=USE && cmake --build build/
 ```
 
 
 ## AVX2
 
 By default, the Makefile compiles the AVX2 version, if you do not have such an
-instruction set, build the 'noavx' target.
+instruction set, set the `AVX` option to `OFF`.
 ```sh
-$ EXTRA='-DPRESET_CPA=256 -DALGO=CLASSIC' make -B
+$ cmake -B build/ -DPRESET_CPA=256 -DALGO=CLASSIC -DAVX=OFF && cmake --build build/
 ```
-
-Executable is then named `qcmdpc_decoder`.
 
 
 # Scripts
@@ -140,8 +138,8 @@ of the DFR is given with Clopper-Pearson confidence intervals.
 
 ### Example of usage and output
 ```sh
-$ EXTRA="-DBLOCK_LENGTH=9901 -DALGO=BACKFLIP2" make -B
-$ ./qcmdpc_decoder_avx2 -T4 -N3000000 > 9901
+$ cmake -B build/ -DBLOCK_LENGTH=9901 -DALGO=BACKFLIP2 && cmake --build build/
+$ build/qcmdpc_decoder -T4 -N3000000 > 9901
 $ python3 scripts/summary.py 9901 0.01
 index        : 2
 block_length : 9901
@@ -191,12 +189,12 @@ keys or error floor patterns.
 
 ### Example of usage and output
 ```sh
-$ EXTRA="-DBLOCK_LENGTH=9901 -DALGO=GRAY_BGF -DWEAK=1 -DWEAK_P=20" make -B
+$ cmake -B build/ -DBLOCK_LENGTH=9901 -DALGO=GRAY_BGF -DWEAK=1 -DWEAK_P=20 && cmake --build build/
 [...]
-$ ./qcmdpc_decoder_avx2 -T4 -N100000 > 9901
-$ EXTRA="-DBLOCK_LENGTH=10103 -DALGO=GRAY_BGF -DWEAK=1 -DWEAK_P=20" make -B
+$ build/qcmdpc_decoder -T4 -N100000 > 9901
+$ cmake -B build/ -DBLOCK_LENGTH=10103 -DALGO=GRAY_BGF -DWEAK=1 -DWEAK_P=20 && cmake --build build/
 [...]
-$ ./qcmdpc_decoder_avx2 -T4 -N100000 > 10103
+$ build/qcmdpc_decoder -T4 -N100000 > 10103
 
 $ python3 scripts/extrapolate.py 9901 10103 12323 0.01
 Point 1
