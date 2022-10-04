@@ -19,9 +19,8 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
    IN THE SOFTWARE
 */
-#ifndef CLI_H
-#define CLI_H
+#pragma once
+
 void print_usage(char *arg0);
 void parse_arguments(int argc, char *argv[], int *max_iter, long int *N,
                      int *threads, int *quiet);
-#endif

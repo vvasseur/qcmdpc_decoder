@@ -19,8 +19,8 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
    IN THE SOFTWARE
 */
-#ifndef SPARSE_CYCLIC_H
-#define SPARSE_CYCLIC_H
+#pragma once
+
 #include "types.h"
 #include "xoroshiro128plus.h"
 
@@ -43,5 +43,4 @@ void multiply_xor_mod2_avx2(dense_t z, const sparse_t x, const dense_t y,
                             index_t block_weight, index_t block_length);
 void multiply_avx2(dense_t z, const sparse_t x, const dense_t y,
                    index_t block_weight, index_t block_length);
-#endif
 #endif

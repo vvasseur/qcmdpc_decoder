@@ -1,5 +1,5 @@
-#ifndef XOROSHIRO128PLUS_H
-#define XOROSHIRO128PLUS_H
+#pragma once
+
 #include <stdint.h>
 
 uint64_t random_uint64_t(uint64_t *S0, uint64_t *S1);
@@ -15,4 +15,3 @@ struct PRNG {
 };
 
 typedef struct PRNG *prng_t;
-#endif

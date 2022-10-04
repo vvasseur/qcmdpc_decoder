@@ -19,8 +19,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
    IN THE SOFTWARE
 */
-#ifndef ERROR_FLOOR_H
-#define ERROR_FLOOR_H
+#pragma once
 #include "types.h"
 #include "xoroshiro128plus.h"
 
@@ -29,4 +28,3 @@ void near_codeword(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT],
 void near_codeword2(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT],
                     prng_t prng);
 void codeword(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT], prng_t prng);
-#endif

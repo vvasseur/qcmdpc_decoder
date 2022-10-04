@@ -19,8 +19,8 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
    IN THE SOFTWARE
 */
-#ifndef DECODER_H
-#define DECODER_H
+#pragma once
+
 #include "types.h"
 #include "xoroshiro128plus.h"
 
@@ -30,5 +30,4 @@ void reset_decoder(decoder_t dec);
 int qcmdpc_decode(decoder_t dec, int max_iter, prng_t prng);
 #else
 int qcmdpc_decode(decoder_t dec, int max_iter);
-#endif
 #endif

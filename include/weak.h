@@ -19,12 +19,10 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
    IN THE SOFTWARE
 */
-#ifndef WEAK_H
-#define WEAK_H
+#pragma once
 #include "types.h"
 #include "xoroshiro128plus.h"
 
 void generate_weak_type1(index_t H[INDEX][BLOCK_WEIGHT], prng_t prng);
 void generate_weak_type2(index_t H[INDEX][BLOCK_WEIGHT], prng_t prng);
 void generate_weak_type3(index_t H[INDEX][BLOCK_WEIGHT], prng_t prng);
-#endif

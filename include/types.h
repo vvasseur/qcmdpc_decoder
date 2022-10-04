@@ -19,8 +19,8 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
    IN THE SOFTWARE
 */
-#ifndef TYPES_H
-#define TYPES_H
+#pragma once
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -114,4 +114,3 @@ struct decoder_bp {
     llr_t tree[1 << LOG2(INDEX * BLOCK_LENGTH)];
     index_t iter;
 };
-#endif

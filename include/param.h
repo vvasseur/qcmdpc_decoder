@@ -19,8 +19,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
    IN THE SOFTWARE
 */
-#ifndef PARAM_H
-#define PARAM_H
+#pragma once
 
 /* In seconds */
 #define TIME_BETWEEN_PRINTS 60
@@ -332,5 +331,4 @@
 #endif
 #if ALGO == BP && OUROBOROS
 #error "Ouroboros with belief propagation decoding: Not implemented"
-#endif
 #endif

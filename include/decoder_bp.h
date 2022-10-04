@@ -19,8 +19,8 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
    IN THE SOFTWARE
 */
-#ifndef DECODER_BP_H
-#define DECODER_BP_H
+#pragma once
+
 #include "types.h"
 #include "xoroshiro128plus.h"
 
@@ -28,4 +28,3 @@ void random_message(decoder_bp_t dec, prng_t prng);
 void init_decoder_error(decoder_bp_t dec, sparse_t e_block, sparse_t e2_block);
 void reset_decoder(decoder_bp_t dec);
 int qcmdpc_decode(decoder_bp_t dec, int max_iter);
-#endif

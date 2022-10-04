@@ -19,12 +19,11 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
    IN THE SOFTWARE
 */
-#ifndef THRESHOLD_H
-#define THRESHOLD_H
+#pragma once
+
 unsigned compute_threshold(unsigned S, unsigned t);
 unsigned compute_threshold_alpha(unsigned S, unsigned t, double alpha);
 #if (ALGO == GRAY_BGF) || (ALGO == GRAY_BGB) || (ALGO == GRAY_B) ||            \
     (ALGO == GRAY_BG)
 unsigned compute_threshold_affine(unsigned S);
-#endif
 #endif
