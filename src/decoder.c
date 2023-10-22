@@ -222,9 +222,12 @@ static inline int affine_ttl(int diff) {
 #endif
 
 int qcmdpc_decode(decoder_t dec, int max_iter) {
-    unsigned threshold;
+    unsigned threshold = 0;
 #if (ALGO == BACKFLIP2)
-    unsigned threshold2, threshold3, threshold4, threshold5;
+    unsigned threshold2 = 0;
+    unsigned threshold3 = 0;
+    unsigned threshold4 = 0;
+    unsigned threshold5 = 0;
 #endif
     /* Only recompute the threshold when necessary */
     dec->blocked = false;
@@ -311,7 +314,7 @@ int qcmdpc_decode(decoder_t dec, int max_iter) {
 #if (ALGO == GRAY_BGF) || (ALGO == GRAY_BGB) || (ALGO == GRAY_B) ||            \
     (ALGO == GRAY_BG)
 int qcmdpc_decode(decoder_t dec, int max_iter) {
-    unsigned threshold;
+    unsigned threshold = 0;
     /* Only recompute the threshold when necessary */
     dec->blocked = false;
     while (dec->iter < max_iter && dec->syndrome_weight != SYNDROME_STOP &&
@@ -399,7 +402,7 @@ int qcmdpc_decode(decoder_t dec, int max_iter, prng_t prng) {
 static int qcmdpc_decode_sbs(decoder_t dec, int max_iter, prng_t prng) {
 #endif
 #if (ALGO == SBS) || (ALGO == SORT)
-    unsigned threshold;
+    unsigned threshold = 0;
     /* Only recompute the threshold when necessary */
     dec->blocked = false;
     unsigned long missed = 0;
