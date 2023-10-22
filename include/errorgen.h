@@ -26,6 +26,9 @@
 void generate_random_error(sparse_t e_block, index_t weight, prng_t prng);
 void generate_random_syndrome_error(sparse_t e_block, index_t weight,
                                     prng_t prng);
+void generate_around_word(sparse_t e_dst, index_t weight_dst, sparse_t e_src,
+                          index_t weight_src, index_t intersections,
+                          prng_t prng);
 void generate_near_codeword(sparse_t e_block, code_t *H, prng_t prng);
 void generate_near_codeword2(sparse_t e_block, code_t *H, prng_t prng);
 void generate_codeword(sparse_t e_block, code_t *H, prng_t prng);
