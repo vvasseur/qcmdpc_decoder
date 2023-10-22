@@ -71,7 +71,7 @@ elseif (${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-generate=build/qcmdpc_decoder.profdata")
   endif()
   if(${PGO} STREQUAL "USE")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-use=qcmdpc_decoder.profdata")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-use=qcmdpc_decoder.profdata -fprofile-correction")
   endif()
 endif()
 
