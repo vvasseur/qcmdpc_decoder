@@ -19,11 +19,18 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
    IN THE SOFTWARE
 */
-#include "weak.h"
+#include "codegen.h"
 #include "param.h"
 #include "sparse_cyclic.h"
 
-void generate_weak_type1(index_t H[INDEX][BLOCK_WEIGHT], prng_t prng) {
+void generate_random_code(code_t *H, prng_t prng) {
+    for (index_t i = 0; i < INDEX; ++i) {
+        sparse_rand(H->columns[i], BLOCK_WEIGHT, BLOCK_LENGTH, prng);
+    }
+    transpose_columns(H);
+}
+
+void generate_weak_type1(code_t *H, prng_t prng) {
     index_t k = prng->random_lim(INDEX - 1, &prng->s0, &prng->s1);
     index_t delta =
         1 + prng->random_lim(BLOCK_LENGTH / 2 - 1, &prng->s0, &prng->s1);
@@ -32,20 +39,21 @@ void generate_weak_type1(index_t H[INDEX][BLOCK_WEIGHT], prng_t prng) {
     index_t length_left = BLOCK_LENGTH;
     for (index_t i = 0; i < WEAK_P; i++) {
         uint32_t a = (delta * (i + shift)) % BLOCK_LENGTH;
-        insert_sorted_noinc(H[k], a, i);
+        insert_sorted_noinc(H->columns[k], a, i);
     }
     length_left -= WEAK_P;
     for (index_t i = WEAK_P; i < BLOCK_WEIGHT; i++) {
         uint32_t rand = prng->random_lim(--length_left, &prng->s0, &prng->s1);
-        insert_sorted(H[k], rand, i);
+        insert_sorted(H->columns[k], rand, i);
     }
 
-    sparse_rand(H[INDEX - 1 - k], BLOCK_WEIGHT, BLOCK_LENGTH, prng);
+    sparse_rand(H->columns[INDEX - 1 - k], BLOCK_WEIGHT, BLOCK_LENGTH, prng);
+    transpose_columns(H);
 }
 
 /* Generate a polynomial with a multiplicity of WEAK_P using the stars and bars
  * principle. */
-void generate_weak_type2(index_t H[INDEX][BLOCK_WEIGHT], prng_t prng) {
+void generate_weak_type2(code_t *H, prng_t prng) {
     index_t k = prng->random_lim(INDEX - 1, &prng->s0, &prng->s1);
     index_t delta =
         1 + prng->random_lim(BLOCK_LENGTH / 2 - 1, &prng->s0, &prng->s1);
@@ -81,48 +89,51 @@ void generate_weak_type2(index_t H[INDEX][BLOCK_WEIGHT], prng_t prng) {
         current_pos = (current_pos + zis[l1]) % BLOCK_LENGTH;
         for (index_t l2 = 0; l2 < ois[l1]; ++l2) {
             uint32_t a = (delta * (current_pos + l2)) % BLOCK_LENGTH;
-            insert_sorted_noinc(H[k], a, i++);
+            insert_sorted_noinc(H->columns[k], a, i++);
         }
         current_pos = (current_pos + ois[l1]) % BLOCK_LENGTH;
     }
 
-    sparse_rand(H[INDEX - 1 - k], BLOCK_WEIGHT, BLOCK_LENGTH, prng);
+    sparse_rand(H->columns[INDEX - 1 - k], BLOCK_WEIGHT, BLOCK_LENGTH, prng);
+    transpose_columns(H);
 }
 
-void generate_weak_type3(index_t H[INDEX][BLOCK_WEIGHT], prng_t prng) {
+void generate_weak_type3(code_t *H, prng_t prng) {
     index_t length = BLOCK_LENGTH;
     index_t shift = prng->random_lim(BLOCK_LENGTH - 1, &prng->s0, &prng->s1);
 
     /* Choose WEAK_P common values. */
     for (index_t i = 0; i < WEAK_P; i++) {
         index_t rand = prng->random_lim(--length, &prng->s0, &prng->s1);
-        rand = insert_sorted(H[0], rand, i);
+        rand = insert_sorted(H->columns[0], rand, i);
         uint32_t a = (rand + shift) % BLOCK_LENGTH;
-        insert_sorted_noinc(H[1], a, i);
+        insert_sorted_noinc(H->columns[1], a, i);
     }
 
-    /* Complete H[0]. */
+    /* Complete H->columns[0]. */
     for (index_t i = WEAK_P; i < BLOCK_WEIGHT; i++) {
         index_t rand = prng->random_lim(--length, &prng->s0, &prng->s1);
-        insert_sorted(H[0], rand, i);
+        insert_sorted(H->columns[0], rand, i);
     }
     length += BLOCK_WEIGHT - WEAK_P;
 
-    /* Complete H[1] without increasing the number of intersections with H[0].
+    /* Complete H->columns[1] without increasing the number of intersections
+     * with H->columns[0].
      */
     for (index_t i = WEAK_P; i < BLOCK_WEIGHT; i++) {
     gen : {
         index_t rand = prng->random_lim(length - 1, &prng->s0, &prng->s1);
 
-        for (index_t j = 0; j < i && H[1][j] <= rand; j++, rand++)
+        for (index_t j = 0; j < i && H->columns[1][j] <= rand; j++, rand++)
             ;
         for (index_t k = 0; k < BLOCK_WEIGHT; k++) {
-            uint32_t a = (H[0][k] + shift) % BLOCK_LENGTH;
+            uint32_t a = (H->columns[0][k] + shift) % BLOCK_LENGTH;
             if (a == rand)
                 goto gen;
         }
-        insert_sorted_noinc(H[1], rand, i);
+        insert_sorted_noinc(H->columns[1], rand, i);
         --length;
     }
     }
+    transpose_columns(H);
 }

@@ -25,10 +25,18 @@
 #include "param.h"
 #include "sparse_cyclic.h"
 
+void generate_random_error(sparse_t e_block, index_t weight, prng_t prng) {
+    sparse_rand(e_block, weight, INDEX * BLOCK_LENGTH, prng);
+}
+
+void generate_random_syndrome_error(sparse_t e_block, index_t weight,
+                                    prng_t prng) {
+    sparse_rand(e_block, weight, BLOCK_LENGTH, prng);
+}
+
 /* Generate an error pattern with ERROR_FLOOR_P intersection with a
  * (BLOCK_WEIGHT, BLOCK_WEIGHT) near-codeword. */
-void near_codeword(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT],
-                   prng_t prng) {
+void generate_near_codeword(sparse_t e_block, code_t *H, prng_t prng) {
     bit_t e[INDEX * BLOCK_LENGTH];
     bit_t h[INDEX * BLOCK_LENGTH];
 
@@ -45,13 +53,13 @@ void near_codeword(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT],
         {
             index_t l;
             for (l = 0; l < BLOCK_WEIGHT; ++l) {
-                index_t i = H[k][l] + shift;
+                index_t i = H->columns[k][l] + shift;
                 if (i >= BLOCK_LENGTH)
                     break;
                 h[i + k * BLOCK_LENGTH] = 1;
             }
             for (; l < BLOCK_WEIGHT; ++l) {
-                index_t i = H[k][l] + shift;
+                index_t i = H->columns[k][l] + shift;
                 h[i + (k - 1) * BLOCK_LENGTH] = 1;
             }
         }
@@ -61,7 +69,8 @@ void near_codeword(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT],
         while (error_weight < ERROR_FLOOR_P) {
             index_t lrand =
                 prng->random_lim(BLOCK_WEIGHT - 1, &prng->s0, &prng->s1);
-            index_t i = (H[k][lrand] + shift) % BLOCK_LENGTH + k * BLOCK_LENGTH;
+            index_t i = (H->columns[k][lrand] + shift) % BLOCK_LENGTH +
+                        k * BLOCK_LENGTH;
             if (!e[i]) {
                 e[i] = 1;
                 insert_sorted_noinc(e_block, i, error_weight++);
@@ -85,10 +94,11 @@ void near_codeword(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT],
             for (index_t l2 = 0; l2 < BLOCK_WEIGHT; ++l2) {
                 index_t inter = 0;
                 for (index_t l3 = 0; l3 < BLOCK_WEIGHT; ++l3) {
-                    index_t j = (e_block[l1] + BLOCK_LENGTH - H[index][l2] +
-                                 H[index][l3]) %
-                                    BLOCK_LENGTH +
-                                index * BLOCK_LENGTH;
+                    index_t j =
+                        (e_block[l1] + BLOCK_LENGTH - H->columns[index][l2] +
+                         H->columns[index][l3]) %
+                            BLOCK_LENGTH +
+                        index * BLOCK_LENGTH;
                     inter += e[j];
                 }
                 if (inter > block_inter[index])
@@ -102,8 +112,7 @@ void near_codeword(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT],
 
 /* Generate an error pattern with ERROR_FLOOR_P intersection with a
  * (2 * BLOCK_WEIGHT, ~2 * BLOCK_WEIGHT) near-codeword. */
-void near_codeword2(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT],
-                    prng_t prng) {
+void generate_near_codeword2(sparse_t e_block, code_t *H, prng_t prng) {
     bit_t e[INDEX * BLOCK_LENGTH];
     bit_t h[INDEX * BLOCK_LENGTH];
 
@@ -119,13 +128,13 @@ void near_codeword2(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT],
             shift[k] = prng->random_lim(BLOCK_LENGTH - 1, &prng->s0, &prng->s1);
             index_t l;
             for (l = 0; l < BLOCK_WEIGHT; ++l) {
-                index_t i = H[k][l] + shift[k];
+                index_t i = H->columns[k][l] + shift[k];
                 if (i >= BLOCK_LENGTH)
                     break;
                 h[i + k * BLOCK_LENGTH] = 1;
             }
             for (; l < BLOCK_WEIGHT; ++l) {
-                index_t i = H[k][l] + shift[k];
+                index_t i = H->columns[k][l] + shift[k];
                 h[i + (k - 1) * BLOCK_LENGTH] = 1;
             }
         }
@@ -136,8 +145,9 @@ void near_codeword2(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT],
             index_t krand = prng->random_lim(INDEX - 1, &prng->s0, &prng->s1);
             index_t lrand =
                 prng->random_lim(BLOCK_WEIGHT - 1, &prng->s0, &prng->s1);
-            index_t i = (H[krand][lrand] + shift[krand]) % BLOCK_LENGTH +
-                        krand * BLOCK_LENGTH;
+            index_t i =
+                (H->columns[krand][lrand] + shift[krand]) % BLOCK_LENGTH +
+                krand * BLOCK_LENGTH;
             if (!e[i]) {
                 e[i] = 1;
                 insert_sorted_noinc(e_block, i, error_weight++);
@@ -161,10 +171,11 @@ void near_codeword2(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT],
             for (index_t l2 = 0; l2 < BLOCK_WEIGHT; ++l2) {
                 index_t inter = 0;
                 for (index_t l3 = 0; l3 < BLOCK_WEIGHT; ++l3) {
-                    index_t j = (e_block[l1] + BLOCK_LENGTH - H[index][l2] +
-                                 H[index][l3]) %
-                                    BLOCK_LENGTH +
-                                index * BLOCK_LENGTH;
+                    index_t j =
+                        (e_block[l1] + BLOCK_LENGTH - H->columns[index][l2] +
+                         H->columns[index][l3]) %
+                            BLOCK_LENGTH +
+                        index * BLOCK_LENGTH;
                     inter += e[j];
                 }
                 if (inter > block_inter[index])
@@ -178,7 +189,7 @@ void near_codeword2(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT],
 
 /* Generate an error pattern with ERROR_FLOOR_P intersection with a
  * codeword of weight 2 * BLOCK_WEIGHT. */
-void codeword(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT], prng_t prng) {
+void generate_codeword(sparse_t e_block, code_t *H, prng_t prng) {
     bit_t e[INDEX * BLOCK_LENGTH];
     bit_t h[INDEX * BLOCK_LENGTH];
 
@@ -194,13 +205,13 @@ void codeword(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT], prng_t prng) {
         for (index_t k = 0; k < INDEX; ++k) {
             index_t l;
             for (l = 0; l < BLOCK_WEIGHT; ++l) {
-                index_t i = H[INDEX - 1 - k][l] + shift;
+                index_t i = H->columns[INDEX - 1 - k][l] + shift;
                 if (i >= BLOCK_LENGTH)
                     break;
                 h[i + k * BLOCK_LENGTH] = 1;
             }
             for (; l < BLOCK_WEIGHT; ++l) {
-                index_t i = H[INDEX - 1 - k][l] + shift;
+                index_t i = H->columns[INDEX - 1 - k][l] + shift;
                 h[i + (k - 1) * BLOCK_LENGTH] = 1;
             }
         }
@@ -211,7 +222,7 @@ void codeword(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT], prng_t prng) {
             index_t krand = prng->random_lim(INDEX - 1, &prng->s0, &prng->s1);
             index_t lrand =
                 prng->random_lim(BLOCK_WEIGHT - 1, &prng->s0, &prng->s1);
-            index_t i = H[krand][lrand] + (1 - krand) * BLOCK_LENGTH;
+            index_t i = H->columns[krand][lrand] + (1 - krand) * BLOCK_LENGTH;
             if (!e[i]) {
                 e[i] = 1;
                 insert_sorted_noinc(e_block, i, error_weight++);
@@ -234,17 +245,19 @@ void codeword(sparse_t e_block, index_t H[INDEX][BLOCK_WEIGHT], prng_t prng) {
             for (index_t l2 = 0; l2 < BLOCK_WEIGHT; ++l2) {
                 index_t inter = 0;
                 for (index_t l3 = 0; l3 < BLOCK_WEIGHT; ++l3) {
-                    index_t j = (e_block[l1] + BLOCK_LENGTH - H[index][l2] +
-                                 H[index][l3]) %
-                                    BLOCK_LENGTH +
-                                (INDEX - 1 - index) * BLOCK_LENGTH;
+                    index_t j =
+                        (e_block[l1] + BLOCK_LENGTH - H->columns[index][l2] +
+                         H->columns[index][l3]) %
+                            BLOCK_LENGTH +
+                        (INDEX - 1 - index) * BLOCK_LENGTH;
                     inter += e[j];
                 }
                 for (index_t l3 = 0; l3 < BLOCK_WEIGHT; ++l3) {
-                    index_t j = (e_block[l1] + BLOCK_LENGTH - H[index][l2] +
-                                 H[INDEX - 1 - index][l3]) %
-                                    BLOCK_LENGTH +
-                                index * BLOCK_LENGTH;
+                    index_t j =
+                        (e_block[l1] + BLOCK_LENGTH - H->columns[index][l2] +
+                         H->columns[INDEX - 1 - index][l3]) %
+                            BLOCK_LENGTH +
+                        index * BLOCK_LENGTH;
                     inter += e[j];
                 }
                 if (inter > max_inter)

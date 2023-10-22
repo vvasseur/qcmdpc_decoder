@@ -4,13 +4,14 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 add_executable(qcmdpc_decoder
   src/cli.c
+  src/code.c
+  src/codegen.c
   src/decoder.c
   src/decoder_bp.c
-  src/error_floor.c
+  src/errorgen.c
   src/qcmdpc_decoder.c
   src/sparse_cyclic.c
   src/threshold.c
-  src/weak.c
   src/xoroshiro128plus.c)
 
 option(AVX "Activate AVX optimization" ON)

@@ -1,5 +1,4 @@
 #pragma once
-
 #include <stdint.h>
 
 uint64_t random_uint64_t(uint64_t *S0, uint64_t *S1);

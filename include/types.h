@@ -20,7 +20,6 @@
    IN THE SOFTWARE
 */
 #pragma once
-
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -40,7 +39,7 @@
     } while (0)
 #define SATURATE(X, SAT) ((X) > (SAT)) ? (SAT) : (((X) > (SAT)) ? -(SAT) : (X))
 
-typedef int_fast32_t index_t;
+typedef int64_t index_t;
 typedef index_t *sparse_t;
 typedef float llr_t;
 
@@ -80,15 +79,28 @@ typedef struct {
     index_t rows[INDEX][BLOCK_WEIGHT];
 } code_t;
 
+typedef struct {
+    bit_t vec[INDEX][2 * SIZE_AVX] __attribute__((aligned(32)));
+    index_t weight;
+} e_t;
+
+typedef struct {
+    bit_t vec[2 * SIZE_AVX] __attribute__((aligned(32)));
+    index_t weight;
+} syndrome_t;
+
+typedef bit_t msg_t[2 * SIZE_AVX] __attribute__((aligned(32)));
+typedef bit_t cw_t[INDEX][2 * SIZE_AVX] __attribute__((aligned(32)));
+typedef bit_t bits_t[INDEX][BLOCK_LENGTH];
+typedef bit_t counters_t[INDEX][2 * SIZE_AVX] __attribute__((aligned(32)));
+
 /* State of the decoder */
 struct decoder {
-    code_t H;
-    bit_t bits[INDEX][BLOCK_LENGTH];
-    bit_t syndrome[2 * SIZE_AVX] __attribute__((aligned(32)));
-    bit_t e[INDEX][2 * SIZE_AVX] __attribute__((aligned(32)));
-    bit_t counters[INDEX][2 * SIZE_AVX] __attribute__((aligned(32)));
-    index_t syndrome_weight;
-    index_t error_weight;
+    code_t *H;
+    syndrome_t *syndrome;
+    e_t *e;
+    bits_t bits;
+    counters_t counters;
     index_t iter;
     bool blocked;
 #if (ALGO == BACKFLIP) || (ALGO == BACKFLIP2)
@@ -106,14 +118,15 @@ struct decoder {
 
 /* State of the decoder for belief propagation */
 struct decoder_bp {
-    code_t H;
-    bit_t message[2 * SIZE_AVX] __attribute__((aligned(32)));
-    bit_t codeword[INDEX][2 * SIZE_AVX] __attribute__((aligned(32)));
-    bit_t bits[INDEX][2 * SIZE_AVX] __attribute__((aligned(32)));
-    bit_t syndrome[2 * SIZE_AVX] __attribute__((aligned(32)));
+    code_t *H;
+    syndrome_t *syndrome;
+    e_t *e;
+    e_t bits;
+    index_t iter;
+    msg_t message;
+    cw_t codeword;
     llr_t r[INDEX][BLOCK_LENGTH];
     llr_t v_to_c[INDEX][BLOCK_WEIGHT][BLOCK_LENGTH];
     llr_t c_to_v[INDEX][BLOCK_WEIGHT][BLOCK_LENGTH];
     llr_t tree[1 << LOG2(INDEX * BLOCK_LENGTH)];
-    index_t iter;
 };

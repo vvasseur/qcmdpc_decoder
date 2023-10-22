@@ -23,6 +23,7 @@
 #include "types.h"
 #include "xoroshiro128plus.h"
 
-void generate_weak_type1(index_t H[INDEX][BLOCK_WEIGHT], prng_t prng);
-void generate_weak_type2(index_t H[INDEX][BLOCK_WEIGHT], prng_t prng);
-void generate_weak_type3(index_t H[INDEX][BLOCK_WEIGHT], prng_t prng);
+void generate_random_code(code_t *H, prng_t prng);
+void generate_weak_type1(code_t *H, prng_t prng);
+void generate_weak_type2(code_t *H, prng_t prng);
+void generate_weak_type3(code_t *H, prng_t prng);

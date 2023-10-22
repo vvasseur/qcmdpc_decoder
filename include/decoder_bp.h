@@ -20,11 +20,10 @@
    IN THE SOFTWARE
 */
 #pragma once
-
 #include "types.h"
 #include "xoroshiro128plus.h"
 
-void random_message(decoder_bp_t dec, prng_t prng);
-void init_decoder_error(decoder_bp_t dec, sparse_t e_block, sparse_t e2_block);
+void init_decoder(decoder_bp_t dec, code_t *H, e_t *e, syndrome_t *syndrome);
+void init_bp(decoder_bp_t dec, prng_t prng);
 void reset_decoder(decoder_bp_t dec);
 int qcmdpc_decode(decoder_bp_t dec, int max_iter);

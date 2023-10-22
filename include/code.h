@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2019-2021 Valentin Vasseur
+   Copyright (c) 2020-2021 Valentin Vasseur
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to
@@ -23,10 +23,16 @@
 #include "types.h"
 #include "xoroshiro128plus.h"
 
-void init_decoder(decoder_t dec, code_t *H, e_t *e, syndrome_t *syndrome);
-void reset_decoder(decoder_t dec);
-#if (ALGO == SBS) || (ALGO == SORT)
-int qcmdpc_decode(decoder_t dec, int max_iter, prng_t prng);
-#else
-int qcmdpc_decode(decoder_t dec, int max_iter);
-#endif
+void transpose_columns(code_t *H);
+void transpose_rows(code_t *H);
+
+void compute_codeword(cw_t codeword, code_t *H, msg_t message);
+void compute_syndrome(syndrome_t *syndrome, code_t *H, e_t *e_dense);
+void compute_counters(counters_t counters, bit_t *syndrome, code_t *H);
+
+void error_sparse_to_dense(e_t *e_dense, const sparse_t e_sparse,
+                           index_t weight);
+void syndrome_add_sparse_error(syndrome_t *syndrome, const sparse_t e_sparse,
+                               index_t weight);
+
+void generate_random_message(msg_t message, prng_t prng);

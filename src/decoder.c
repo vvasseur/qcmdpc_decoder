@@ -25,16 +25,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "code.h"
 #include "decoder.h"
 #include "param.h"
-#include "sparse_cyclic.h"
 #include "threshold.h"
 
 static bit_t get_counter(decoder_t dec, index_t index, index_t position);
 static void flip_column(decoder_t dec, index_t index, index_t position);
 static void single_flip(decoder_t dec, index_t index, index_t position);
-static void compute_syndrome(decoder_t dec);
-static void compute_counters(decoder_t dec);
 
 static bit_t get_counter(decoder_t dec, index_t index, index_t position) {
     bit_t counter = 0;
@@ -42,16 +40,16 @@ static bit_t get_counter(decoder_t dec, index_t index, index_t position) {
 
     index_t l;
     for (l = 0; l < BLOCK_WEIGHT; ++l) {
-        index_t i = offset + dec->H.columns[index][l];
+        index_t i = offset + dec->H->columns[index][l];
         if (i >= BLOCK_LENGTH) {
             offset -= BLOCK_LENGTH;
             break;
         }
-        counter += dec->syndrome[i];
+        counter += dec->syndrome->vec[i];
     }
     for (; l < BLOCK_WEIGHT; ++l) {
-        index_t i = offset + dec->H.columns[index][l];
-        counter += dec->syndrome[i];
+        index_t i = offset + dec->H->columns[index][l];
+        counter += dec->syndrome->vec[i];
     }
     return counter;
 }
@@ -61,16 +59,16 @@ static void flip_column(decoder_t dec, index_t index, index_t position) {
 
     index_t l;
     for (l = 0; l < BLOCK_WEIGHT; ++l) {
-        index_t i = offset + dec->H.columns[index][l];
+        index_t i = offset + dec->H->columns[index][l];
         if (i >= BLOCK_LENGTH) {
             offset -= BLOCK_LENGTH;
             break;
         }
-        dec->syndrome[i] ^= 1;
+        dec->syndrome->vec[i] ^= 1;
     }
     for (; l < BLOCK_WEIGHT; ++l) {
-        index_t i = offset + dec->H.columns[index][l];
-        dec->syndrome[i] ^= 1;
+        index_t i = offset + dec->H->columns[index][l];
+        dec->syndrome->vec[i] ^= 1;
     }
 }
 
@@ -78,82 +76,19 @@ static void single_flip(decoder_t dec, index_t index, index_t position) {
     bit_t counter = get_counter(dec, index, position);
     flip_column(dec, index, position);
     dec->bits[index][position] ^= 1;
-    dec->syndrome_weight += BLOCK_WEIGHT - 2 * counter;
-    dec->error_weight +=
-        2 * (dec->bits[index][position] ^ dec->e[index][position]) - 1;
+    dec->syndrome->weight += BLOCK_WEIGHT - 2 * counter;
+    dec->e->weight +=
+        2 * (dec->bits[index][position] ^ dec->e->vec[index][position]) - 1;
 }
 
-static void compute_syndrome(decoder_t dec) {
-    memset(dec->syndrome, 0, 2 * SIZE_AVX * sizeof(bit_t));
-#ifndef AVX
-    for (index_t i = 0; i < INDEX; ++i) {
-        multiply_xor_mod2(dec->syndrome, dec->H.columns[i], dec->e[i],
-                          BLOCK_WEIGHT, BLOCK_LENGTH);
-    }
-#else
-    for (index_t i = 0; i < INDEX; ++i) {
-        memcpy(dec->e[i] + BLOCK_LENGTH, dec->e[i],
-               BLOCK_LENGTH * sizeof(bit_t));
-        multiply_xor_mod2_avx2(dec->syndrome, dec->H.rows[i], dec->e[i],
-                               BLOCK_WEIGHT, SIZE_AVX);
-    }
-#endif
-}
-
-/* Computing all the counters at is more efficient if we consider the
- * quasi-cyclic structure. */
-static void compute_counters(decoder_t dec) {
-    memcpy(dec->syndrome + BLOCK_LENGTH, dec->syndrome,
-           BLOCK_LENGTH * sizeof(bit_t));
-    for (index_t i = 0; i < INDEX; ++i) {
-#ifndef AVX
-        memset(dec->counters[i], 0, BLOCK_LENGTH * sizeof(bit_t));
-        multiply_add(dec->counters[i], dec->H.rows[i], dec->syndrome,
-                     BLOCK_WEIGHT, BLOCK_LENGTH);
-#else
-        multiply_avx2(dec->counters[i], dec->H.columns[i], dec->syndrome,
-                      BLOCK_WEIGHT, SIZE_AVX);
-#endif
-    }
-}
-
-void init_decoder_error(decoder_t dec, const sparse_t e_block,
-                        const sparse_t e2_block) {
-    dec->error_weight = ERROR_WEIGHT;
-
-    {
-        index_t k;
-        for (k = 0; k < ERROR_WEIGHT; ++k) {
-            index_t j = e_block[k];
-            if (j >= BLOCK_LENGTH)
-                break;
-            dec->e[0][j] = 1;
-        }
-        for (; k < ERROR_WEIGHT; ++k) {
-            index_t j = e_block[k] - BLOCK_LENGTH;
-            dec->e[1][j] = 1;
-        }
-    }
-    compute_syndrome(dec);
-
-#if OUROBOROS
-    if (e2_block) {
-        for (index_t k = 0; k < SYNDROME_STOP; ++k) {
-            dec->syndrome[e2_block[k]] ^= 1;
-        }
-    }
-#else
-    (void)e2_block;
-#endif
-    dec->syndrome_weight = 0;
-    for (index_t j = 0; j < BLOCK_LENGTH; ++j) {
-        dec->syndrome_weight += dec->syndrome[j];
-    }
+void init_decoder(decoder_t dec, code_t *H, e_t *e, syndrome_t *syndrome) {
+    dec->H = H;
+    dec->e = e;
+    dec->syndrome = syndrome;
 }
 
 void reset_decoder(decoder_t dec) {
     memset(dec->bits, 0, INDEX * BLOCK_LENGTH * sizeof(bit_t));
-    memset(dec->e, 0, INDEX * 2 * SIZE_AVX * sizeof(bit_t));
 #if (ALGO == BACKFLIP) || (ALGO == BACKFLIP2)
     dec->fl.first = -1;
     dec->fl.length = 0;
@@ -164,14 +99,14 @@ void reset_decoder(decoder_t dec) {
 #if (ALGO == CLASSIC)
 int qcmdpc_decode(decoder_t dec, int max_iter) {
     dec->blocked = false;
-    while (dec->iter < max_iter && dec->syndrome_weight != SYNDROME_STOP &&
+    while (dec->iter < max_iter && dec->syndrome->weight != SYNDROME_STOP &&
            !dec->blocked) {
         ++dec->iter;
 
-        compute_counters(dec);
+        compute_counters(dec->counters, dec->syndrome->vec, dec->H);
 
         unsigned threshold =
-            compute_threshold(dec->syndrome_weight, dec->error_weight);
+            compute_threshold(dec->syndrome->weight, dec->e->weight);
 
         dec->blocked = true;
         for (index_t k = 0; k < INDEX; ++k)
@@ -182,7 +117,7 @@ int qcmdpc_decode(decoder_t dec, int max_iter) {
                 }
     }
 
-    return !dec->error_weight;
+    return !dec->e->weight;
 }
 #endif
 
@@ -231,27 +166,27 @@ int qcmdpc_decode(decoder_t dec, int max_iter) {
 #endif
     /* Only recompute the threshold when necessary */
     dec->blocked = false;
-    while (dec->iter < max_iter && dec->syndrome_weight != SYNDROME_STOP) {
+    while (dec->iter < max_iter && dec->syndrome->weight != SYNDROME_STOP) {
         ++dec->iter;
-        compute_counters(dec);
+        compute_counters(dec->counters, dec->syndrome->vec, dec->H);
 
         if (!dec->blocked) {
             int t = (ERROR_WEIGHT > dec->fl.length)
                         ? ERROR_WEIGHT - dec->fl.length
                         : 1;
 #if (ALGO == BACKFLIP)
-            threshold = compute_threshold(dec->syndrome_weight, t);
+            threshold = compute_threshold(dec->syndrome->weight, t);
 #else // (ALGO == BACKFLIP2)
             threshold =
-                compute_threshold_alpha(dec->syndrome_weight, t, THRESHOLD_A0);
+                compute_threshold_alpha(dec->syndrome->weight, t, THRESHOLD_A0);
             threshold2 =
-                compute_threshold_alpha(dec->syndrome_weight, t, THRESHOLD_A1);
+                compute_threshold_alpha(dec->syndrome->weight, t, THRESHOLD_A1);
             threshold3 =
-                compute_threshold_alpha(dec->syndrome_weight, t, THRESHOLD_A2);
+                compute_threshold_alpha(dec->syndrome->weight, t, THRESHOLD_A2);
             threshold4 =
-                compute_threshold_alpha(dec->syndrome_weight, t, THRESHOLD_A3);
+                compute_threshold_alpha(dec->syndrome->weight, t, THRESHOLD_A3);
             threshold5 =
-                compute_threshold_alpha(dec->syndrome_weight, t, THRESHOLD_A4);
+                compute_threshold_alpha(dec->syndrome->weight, t, THRESHOLD_A4);
 #endif
         }
 
@@ -288,7 +223,7 @@ int qcmdpc_decode(decoder_t dec, int max_iter) {
                 }
             }
         }
-        if (dec->syndrome_weight != SYNDROME_STOP && dec->fl.length) {
+        if (dec->syndrome->weight != SYNDROME_STOP && dec->fl.length) {
             uint8_t current_iter = dec->iter % (TTL_SATURATE + 1);
             index_t fl_pos = dec->fl.first;
             while (fl_pos != -1) {
@@ -307,7 +242,7 @@ int qcmdpc_decode(decoder_t dec, int max_iter) {
         }
     }
 
-    return !dec->error_weight;
+    return !dec->e->weight;
 }
 #endif
 
@@ -317,13 +252,13 @@ int qcmdpc_decode(decoder_t dec, int max_iter) {
     unsigned threshold = 0;
     /* Only recompute the threshold when necessary */
     dec->blocked = false;
-    while (dec->iter < max_iter && dec->syndrome_weight != SYNDROME_STOP &&
+    while (dec->iter < max_iter && dec->syndrome->weight != SYNDROME_STOP &&
            !dec->blocked) {
         ++dec->iter;
-        compute_counters(dec);
+        compute_counters(dec->counters, dec->syndrome->vec, dec->H);
 
         if (!dec->blocked)
-            threshold = compute_threshold_affine(dec->syndrome_weight);
+            threshold = compute_threshold_affine(dec->syndrome->weight);
 
         dec->blocked = true;
 
@@ -391,7 +326,7 @@ int qcmdpc_decode(decoder_t dec, int max_iter) {
         }
     }
 
-    return !dec->error_weight;
+    return !dec->e->weight;
 }
 #endif
 
@@ -406,10 +341,10 @@ static int qcmdpc_decode_sbs(decoder_t dec, int max_iter, prng_t prng) {
     /* Only recompute the threshold when necessary */
     dec->blocked = false;
     unsigned long missed = 0;
-    while (dec->iter < max_iter && dec->syndrome_weight != SYNDROME_STOP) {
+    while (dec->iter < max_iter && dec->syndrome->weight != SYNDROME_STOP) {
         ++dec->iter;
         if (missed > INDEX * BLOCK_LENGTH) {
-            compute_counters(dec);
+            compute_counters(dec->counters, dec->syndrome->vec, dec->H);
             bool found = false;
             for (index_t k = 0; k < INDEX && !found; ++k) {
                 for (index_t j = 0; j < BLOCK_LENGTH && !found; ++j) {
@@ -422,20 +357,20 @@ static int qcmdpc_decode_sbs(decoder_t dec, int max_iter, prng_t prng) {
         }
         if (!dec->blocked)
             threshold =
-                compute_threshold(dec->syndrome_weight, dec->error_weight);
+                compute_threshold(dec->syndrome->weight, dec->e->weight);
 
         dec->blocked = true;
         /* Randomly pick a 1 in the syndrome */
         int i;
         do {
             i = prng->random_lim(BLOCK_LENGTH - 1, &prng->s0, &prng->s1);
-        } while (!dec->syndrome[i]);
+        } while (!dec->syndrome->vec[i]);
         int k;
         k = prng->random_lim(INDEX - 1, &prng->s0, &prng->s1);
         int l;
         l = prng->random_lim(BLOCK_WEIGHT - 1, &prng->s0, &prng->s1);
 
-        int j = i + dec->H.rows[k][l];
+        int j = i + dec->H->rows[k][l];
         j = (j >= BLOCK_LENGTH) ? (j - BLOCK_LENGTH) : j;
 
         bit_t counter = get_counter(dec, k, j);
@@ -447,7 +382,7 @@ static int qcmdpc_decode_sbs(decoder_t dec, int max_iter, prng_t prng) {
             ++missed;
     }
 
-    return !dec->error_weight;
+    return !dec->e->weight;
 }
 #endif
 
@@ -524,7 +459,7 @@ static void sort_counters(pos_counter_t sorted_counters[GRAY_SIZE],
 }
 
 int qcmdpc_decode(decoder_t dec, int max_iter, prng_t prng) {
-    compute_counters(dec);
+    compute_counters(dec->counters, dec->syndrome->vec, dec->H);
     sort_counters(dec->sorted_counters, dec->counters, GRAY_SIZE);
 
     const unsigned threshold = (BLOCK_WEIGHT + 1) / 2;
@@ -543,7 +478,7 @@ int qcmdpc_decode(decoder_t dec, int max_iter, prng_t prng) {
 
     qcmdpc_decode_sbs(dec, max_iter, prng);
 
-    return !dec->error_weight;
+    return !dec->e->weight;
 }
 #endif
 #endif

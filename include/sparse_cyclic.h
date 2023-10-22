@@ -20,7 +20,6 @@
    IN THE SOFTWARE
 */
 #pragma once
-
 #include "types.h"
 #include "xoroshiro128plus.h"
 
@@ -29,7 +28,7 @@ void insert_sorted_noinc(sparse_t array, index_t value, index_t max_i);
 
 sparse_t sparse_new(index_t weight);
 void sparse_free(sparse_t array);
-void sparse_rand(sparse_t array, index_t length, index_t weight, prng_t prng);
+void sparse_rand(sparse_t array, index_t weight, index_t length, prng_t prng);
 
 void transpose(sparse_t dst, const sparse_t src, index_t weight,
                index_t length);
