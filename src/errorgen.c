@@ -93,7 +93,7 @@ void generate_near_codeword(sparse_t e_block, code_t *H, prng_t prng) {
 /* Generate an error pattern with ERROR_FLOOR_P intersection with a
  * (2 * BLOCK_WEIGHT, ~2 * BLOCK_WEIGHT) near-codeword. */
 void generate_near_codeword2(sparse_t e_block, code_t *H, prng_t prng) {
-    index_t e_src[BLOCK_WEIGHT];
+    index_t e_src[2 * BLOCK_WEIGHT];
 
     for (index_t l = 0; l < BLOCK_WEIGHT; ++l) {
         e_src[l] = H->columns[0][l];
@@ -114,7 +114,7 @@ void generate_near_codeword2(sparse_t e_block, code_t *H, prng_t prng) {
 /* Generate an error pattern with ERROR_FLOOR_P intersection with a
  * codeword of weight 2 * BLOCK_WEIGHT. */
 void generate_codeword(sparse_t e_block, code_t *H, prng_t prng) {
-    index_t e_src[BLOCK_WEIGHT];
+    index_t e_src[INDEX * BLOCK_WEIGHT];
 
     for (index_t k = 0; k < INDEX; ++k) {
         index_t l;
