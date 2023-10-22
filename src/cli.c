@@ -195,12 +195,12 @@ static void parse_arguments(int argc, char *argv[], int *max_iter, long int *N,
 
 void *print(void *arg) {
     (void)arg;
-    while (current_results->run) {
+    do {
         sleep(TIME_BETWEEN_PRINTS);
         print_stats(stdout);
-    }
+    } while (current_results->run);
 
-    return NULL;
+        return NULL;
 }
 
 int main(int argc, char *argv[]) {
