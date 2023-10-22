@@ -268,12 +268,12 @@ The Python 3 script requires gmpy2 and scipy.
 Confidence intervals for extrapolations can also be calculated "by hand".
 
 ```sh
-$ python3 ci.py 12323 10037 66391 3747161784 10253 5 1445221866 0.01
+$ python3 scripts/ci.py 12323 10037 66391 3747161784 10253 5 1445221866 0.01
 -164.21 -146.20 -130.31
 ```
 
 ```sh
-$ python3 ci.py 12323 10181 394 14576092619 10253 111 34283154045 0.01
+$ python3 scripts/ci.py 12323 10181 394 14576092619 10253 111 34283154045 0.01
 -128.13 -116.22 -104.57
 ```
 
