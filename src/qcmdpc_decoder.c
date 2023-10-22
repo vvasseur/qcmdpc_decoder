@@ -31,7 +31,7 @@
 #include "param.h"
 #include "qcmdpc_decoder.h"
 #include "types.h"
-#include "xoroshiro128plus.h"
+#include "xoshiro256plusplus.h"
 
 #if (ALGO == BP)
 #include "decoder_bp.h"
@@ -84,7 +84,7 @@ struct process_args {
     /* Number of test rounds */
     long int r;
     /* PRNG seeds */
-    uint64_t s[2];
+    uint64_t s[4];
 
     int id;
 
@@ -119,13 +119,12 @@ void *process(void *arg) {
 #endif
 
     struct PRNG prng;
-    prng.s0 = args->s[0];
-    prng.s1 = args->s[1];
+    memcpy(prng.s, args->s, 4 * sizeof(uint64_t));
     prng.random_lim = random_lim;
     prng.random_uint64_t = random_uint64_t;
 
     for (int i = 0; i < tid; ++i) {
-        jump(&prng.s0, &prng.s1);
+        jump(prng.s);
     }
     init_decoder(dec, &H, &e, &syndrome);
 
@@ -188,8 +187,8 @@ void *process(void *arg) {
 
 void decoder_loop(decoding_results_t *results, int n_threads, long int r) {
     /* PRNG seeds */
-    uint64_t s[2] = {0};
-    seed_random(&s[0], &s[1]);
+    uint64_t s[4] = {0};
+    seed_random(s);
 
     struct process_args args[n_threads];
     for (int i = 0; i < n_threads; i++) {

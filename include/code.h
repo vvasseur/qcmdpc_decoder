@@ -21,7 +21,7 @@
 */
 #pragma once
 #include "types.h"
-#include "xoroshiro128plus.h"
+#include "xoshiro256plusplus.h"
 
 void transpose_columns(code_t *H);
 void transpose_rows(code_t *H);

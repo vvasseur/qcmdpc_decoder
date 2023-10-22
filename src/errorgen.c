@@ -41,7 +41,7 @@ void generate_around_word(sparse_t e_dst, index_t weight_dst, sparse_t e_src,
     bit_t h[INDEX * BLOCK_LENGTH] = {0};
 
     /* Pick a near-codeword. */
-    index_t shift = prng->random_lim(BLOCK_LENGTH - 1, &prng->s0, &prng->s1);
+    index_t shift = prng->random_lim(BLOCK_LENGTH, prng->s);
     for (index_t l = 0; l < weight_src; ++l) {
         index_t k = e_src[l] >= BLOCK_LENGTH;
         index_t i =
@@ -53,7 +53,7 @@ void generate_around_word(sparse_t e_dst, index_t weight_dst, sparse_t e_src,
     /* Pick `intersections` common positions with the near-codeword. */
     index_t error_weight = 0;
     while (error_weight < intersections) {
-        index_t lrand = prng->random_lim(weight_src - 1, &prng->s0, &prng->s1);
+        index_t lrand = prng->random_lim(weight_src, prng->s);
         index_t k = e_src[lrand] >= BLOCK_LENGTH;
         index_t i = k ? (e_src[lrand] - BLOCK_LENGTH + shift) % BLOCK_LENGTH +
                             BLOCK_LENGTH
@@ -66,8 +66,7 @@ void generate_around_word(sparse_t e_dst, index_t weight_dst, sparse_t e_src,
 
     /* Complete the error pattern. */
     while (error_weight < weight_dst) {
-        index_t jrand =
-            prng->random_lim(INDEX * BLOCK_LENGTH - 1, &prng->s0, &prng->s1);
+        index_t jrand = prng->random_lim(INDEX * BLOCK_LENGTH, prng->s);
         if (!e[jrand] && !h[jrand]) {
             e[jrand] = 1;
             insert_sorted_noinc(e_dst, jrand, error_weight++);
@@ -81,7 +80,7 @@ void generate_near_codeword(sparse_t e_block, code_t *H, prng_t prng) {
     index_t e_src[BLOCK_WEIGHT];
 
     /* Pick a near-codeword. */
-    index_t k = prng->random_lim(INDEX - 1, &prng->s0, &prng->s1);
+    index_t k = prng->random_lim(INDEX, prng->s);
 
     for (index_t l = 0; l < BLOCK_WEIGHT; ++l) {
         e_src[l] = k * BLOCK_LENGTH + H->columns[k][l];
@@ -101,7 +100,7 @@ void generate_near_codeword2(sparse_t e_block, code_t *H, prng_t prng) {
     }
 
     /* Pick a near-codeword. */
-    index_t shift = prng->random_lim(BLOCK_LENGTH - 1, &prng->s0, &prng->s1);
+    index_t shift = prng->random_lim(BLOCK_LENGTH, prng->s);
     for (index_t l = 0; l < BLOCK_WEIGHT; ++l) {
         index_t i = H->columns[1][l] + shift;
         i = (i <= BLOCK_LENGTH) ? i : (i - BLOCK_LENGTH);

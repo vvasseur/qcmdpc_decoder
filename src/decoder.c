@@ -363,12 +363,12 @@ static int qcmdpc_decode_sbs(decoder_t dec, int max_iter, prng_t prng) {
         /* Randomly pick a 1 in the syndrome */
         int i;
         do {
-            i = prng->random_lim(BLOCK_LENGTH - 1, &prng->s0, &prng->s1);
+            i = prng->random_lim(BLOCK_LENGTH, prng->s);
         } while (!dec->syndrome->vec[i]);
         int k;
-        k = prng->random_lim(INDEX - 1, &prng->s0, &prng->s1);
+        k = prng->random_lim(INDEX, prng->s);
         int l;
-        l = prng->random_lim(BLOCK_WEIGHT - 1, &prng->s0, &prng->s1);
+        l = prng->random_lim(BLOCK_WEIGHT, prng->s);
 
         int j = i + dec->H->rows[k][l];
         j = (j >= BLOCK_LENGTH) ? (j - BLOCK_LENGTH) : j;

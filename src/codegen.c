@@ -31,10 +31,9 @@ void generate_random_code(code_t *H, prng_t prng) {
 }
 
 void generate_weak_type1(code_t *H, prng_t prng) {
-    index_t k = prng->random_lim(INDEX - 1, &prng->s0, &prng->s1);
-    index_t delta =
-        1 + prng->random_lim(BLOCK_LENGTH / 2 - 1, &prng->s0, &prng->s1);
-    index_t shift = prng->random_lim(BLOCK_LENGTH - 1, &prng->s0, &prng->s1);
+    index_t k = prng->random_lim(INDEX, prng->s);
+    index_t delta = 1 + prng->random_lim(BLOCK_LENGTH / 2, prng->s);
+    index_t shift = prng->random_lim(BLOCK_LENGTH, prng->s);
 
     index_t length_left = BLOCK_LENGTH;
     for (index_t i = 0; i < WEAK_P; i++) {
@@ -43,7 +42,7 @@ void generate_weak_type1(code_t *H, prng_t prng) {
     }
     length_left -= WEAK_P;
     for (index_t i = WEAK_P; i < BLOCK_WEIGHT; i++) {
-        uint32_t rand = prng->random_lim(--length_left, &prng->s0, &prng->s1);
+        uint32_t rand = prng->random_lim(length_left--, prng->s);
         insert_sorted(H->columns[k], rand, i);
     }
 
@@ -54,9 +53,8 @@ void generate_weak_type1(code_t *H, prng_t prng) {
 /* Generate a polynomial with a multiplicity of WEAK_P using the stars and bars
  * principle. */
 void generate_weak_type2(code_t *H, prng_t prng) {
-    index_t k = prng->random_lim(INDEX - 1, &prng->s0, &prng->s1);
-    index_t delta =
-        1 + prng->random_lim(BLOCK_LENGTH / 2 - 1, &prng->s0, &prng->s1);
+    index_t k = prng->random_lim(INDEX, prng->s);
+    index_t delta = 1 + prng->random_lim(BLOCK_LENGTH / 2, prng->s);
 
     const index_t s = BLOCK_WEIGHT - WEAK_P;
     /* First the ois and zis represent the "bars". */
@@ -66,14 +64,14 @@ void generate_weak_type2(code_t *H, prng_t prng) {
     ois[s] = BLOCK_WEIGHT;
     index_t left = BLOCK_WEIGHT - 1;
     for (index_t i = 1; i < s; i++) {
-        uint32_t rand = prng->random_lim(--left, &prng->s0, &prng->s1);
+        uint32_t rand = prng->random_lim(left--, prng->s);
         insert_sorted(ois, rand, i);
     }
     zis[0] = 0;
     zis[s] = BLOCK_LENGTH - BLOCK_WEIGHT;
     left = BLOCK_LENGTH - BLOCK_WEIGHT - 1;
     for (index_t i = 1; i < s; i++) {
-        uint32_t rand = prng->random_lim(--left, &prng->s0, &prng->s1);
+        uint32_t rand = prng->random_lim(left--, prng->s);
         insert_sorted(zis, rand, i);
     }
     /* Convert ois and zis to run-length. */
@@ -82,7 +80,7 @@ void generate_weak_type2(code_t *H, prng_t prng) {
         zis[i] = zis[i + 1] - zis[i];
     }
 
-    index_t shift = prng->random_lim(ois[0] + zis[0] - 1, &prng->s0, &prng->s1);
+    index_t shift = prng->random_lim(ois[0] + zis[0], prng->s);
     index_t current_pos = (BLOCK_LENGTH - shift) % BLOCK_LENGTH;
     index_t i = 0;
     for (index_t l1 = 0; l1 < s; ++l1) {
@@ -100,11 +98,11 @@ void generate_weak_type2(code_t *H, prng_t prng) {
 
 void generate_weak_type3(code_t *H, prng_t prng) {
     index_t length = BLOCK_LENGTH;
-    index_t shift = prng->random_lim(BLOCK_LENGTH - 1, &prng->s0, &prng->s1);
+    index_t shift = prng->random_lim(BLOCK_LENGTH, prng->s);
 
     /* Choose WEAK_P common values. */
     for (index_t i = 0; i < WEAK_P; i++) {
-        index_t rand = prng->random_lim(--length, &prng->s0, &prng->s1);
+        index_t rand = prng->random_lim(length--, prng->s);
         rand = insert_sorted(H->columns[0], rand, i);
         uint32_t a = (rand + shift) % BLOCK_LENGTH;
         insert_sorted_noinc(H->columns[1], a, i);
@@ -112,7 +110,7 @@ void generate_weak_type3(code_t *H, prng_t prng) {
 
     /* Complete H->columns[0]. */
     for (index_t i = WEAK_P; i < BLOCK_WEIGHT; i++) {
-        index_t rand = prng->random_lim(--length, &prng->s0, &prng->s1);
+        index_t rand = prng->random_lim(length--, prng->s);
         insert_sorted(H->columns[0], rand, i);
     }
     length += BLOCK_WEIGHT - WEAK_P;
@@ -122,7 +120,7 @@ void generate_weak_type3(code_t *H, prng_t prng) {
      */
     for (index_t i = WEAK_P; i < BLOCK_WEIGHT; i++) {
     gen : {
-        index_t rand = prng->random_lim(length - 1, &prng->s0, &prng->s1);
+        index_t rand = prng->random_lim(length, prng->s);
 
         for (index_t j = 0; j < i && H->columns[1][j] <= rand; j++, rand++)
             ;

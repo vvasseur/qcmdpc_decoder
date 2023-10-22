@@ -60,7 +60,7 @@ index_t insert_sorted(sparse_t array, index_t value, index_t max_i) {
 void sparse_rand(sparse_t array, index_t weight, index_t length, prng_t prng) {
     /* Get an ordered list of positions for which the bit should be set to 1. */
     for (index_t i = 0; i < weight; i++) {
-        index_t rand = prng->random_lim(--length, &prng->s0, &prng->s1);
+        index_t rand = prng->random_lim(length--, prng->s);
         insert_sorted(array, rand, i);
     }
 }

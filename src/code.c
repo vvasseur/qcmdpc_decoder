@@ -99,7 +99,7 @@ void syndrome_add_sparse_error(syndrome_t *syndrome, const sparse_t e_sparse,
 
 void generate_random_message(msg_t message, prng_t prng) {
     for (index_t i = 0; i < BLOCK_LENGTH; i += 64) {
-        index_t rand = prng->random_uint64_t(&prng->s0, &prng->s1);
+        index_t rand = prng->random_uint64_t(prng->s);
         for (index_t j = 0; j < 64 && i + j < BLOCK_LENGTH; ++j) {
             bit_t b = (rand >> j) & 1L;
             message[i + j] = b;

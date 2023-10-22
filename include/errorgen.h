@@ -21,7 +21,7 @@
 */
 #pragma once
 #include "types.h"
-#include "xoroshiro128plus.h"
+#include "xoshiro256plusplus.h"
 
 void generate_random_error(sparse_t e_block, index_t weight, prng_t prng);
 void generate_random_syndrome_error(sparse_t e_block, index_t weight,

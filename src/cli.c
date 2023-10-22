@@ -200,7 +200,7 @@ void *print(void *arg) {
         print_stats(stdout);
     } while (current_results->run);
 
-        return NULL;
+    return NULL;
 }
 
 int main(int argc, char *argv[]) {

@@ -21,7 +21,7 @@
 */
 #pragma once
 #include "types.h"
-#include "xoroshiro128plus.h"
+#include "xoshiro256plusplus.h"
 
 void init_decoder(decoder_bp_t dec, code_t *H, e_t *e, syndrome_t *syndrome);
 void init_bp(decoder_bp_t dec, prng_t prng);

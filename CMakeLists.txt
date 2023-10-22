@@ -12,7 +12,7 @@ add_executable(qcmdpc_decoder
   src/qcmdpc_decoder.c
   src/sparse_cyclic.c
   src/threshold.c
-  src/xoroshiro128plus.c)
+  src/xoshiro256plusplus.c)
 
 option(AVX "Activate AVX optimization" ON)
 option(PGO "Use Profile-guided optimization (set this option to GEN, then run the executable, then recompile setting this option to USE)" OFF)

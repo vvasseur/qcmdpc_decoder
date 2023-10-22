@@ -21,7 +21,7 @@
 */
 #pragma once
 #include "types.h"
-#include "xoroshiro128plus.h"
+#include "xoshiro256plusplus.h"
 
 index_t insert_sorted(sparse_t array, index_t value, index_t max_i);
 void insert_sorted_noinc(sparse_t array, index_t value, index_t max_i);

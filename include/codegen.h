@@ -21,7 +21,7 @@
 */
 #pragma once
 #include "types.h"
-#include "xoroshiro128plus.h"
+#include "xoshiro256plusplus.h"
 
 void generate_random_code(code_t *H, prng_t prng);
 void generate_weak_type1(code_t *H, prng_t prng);
