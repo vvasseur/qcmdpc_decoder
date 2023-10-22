@@ -53,12 +53,12 @@ static void compute_codeword(decoder_bp_t dec) {
     memset(dec->codeword, 0, INDEX * 2 * SIZE_AVX * sizeof(bit_t));
 #ifndef AVX
     for (index_t k = 0; k < INDEX; ++k) {
-        multiply_xor_mod2(dec->codeword[k], dec->Hcolumns[INDEX - 1 - k],
+        multiply_xor_mod2(dec->codeword[k], dec->H.columns[INDEX - 1 - k],
                           dec->message, BLOCK_WEIGHT, BLOCK_LENGTH);
     }
 #else
     for (index_t k = 0; k < INDEX; ++k) {
-        multiply_xor_mod2_avx2(dec->codeword[k], dec->Hrows[INDEX - 1 - k],
+        multiply_xor_mod2_avx2(dec->codeword[k], dec->H.rows[INDEX - 1 - k],
                                dec->message, BLOCK_WEIGHT, SIZE_AVX);
     }
 #endif
@@ -68,12 +68,12 @@ static void compute_syndrome(decoder_bp_t dec) {
     memset(dec->syndrome, 0, 2 * SIZE_AVX * sizeof(bit_t));
 #ifndef AVX
     for (index_t k = 0; k < INDEX; ++k) {
-        multiply_xor_mod2(dec->syndrome, dec->Hcolumns[k], dec->bits[k],
+        multiply_xor_mod2(dec->syndrome, dec->H.columns[k], dec->bits[k],
                           BLOCK_WEIGHT, BLOCK_LENGTH);
     }
 #else
     for (index_t k = 0; k < INDEX; ++k) {
-        multiply_xor_mod2_avx2(dec->syndrome, dec->Hrows[k], dec->bits[k],
+        multiply_xor_mod2_avx2(dec->syndrome, dec->H.rows[k], dec->bits[k],
                                BLOCK_WEIGHT, SIZE_AVX);
     }
 #endif
@@ -108,9 +108,6 @@ static void to_binary(decoder_bp_t dec) {
 
 void init_decoder_error(decoder_bp_t dec, const sparse_t e_block,
                         const sparse_t e2_block) {
-    for (index_t i = 0; i < INDEX; ++i) {
-        transpose(dec->Hrows[i], dec->Hcolumns[i], BLOCK_WEIGHT, BLOCK_LENGTH);
-    }
     compute_codeword(dec);
 
     const llr_t proba_init =
@@ -203,15 +200,17 @@ int qcmdpc_decode(decoder_bp_t dec, int max_iter) {
         for (index_t i = 0; i < BLOCK_LENGTH; ++i) {
             for (index_t k = 0; k < INDEX; ++k)
                 for (index_t l = 0; l < BLOCK_WEIGHT; ++l) {
-                    index_t j = ((i > dec->Hcolumns[k][l]) ? 0 : BLOCK_LENGTH) +
-                                i - dec->Hcolumns[k][l];
+                    index_t j =
+                        ((i > dec->H.columns[k][l]) ? 0 : BLOCK_LENGTH) + i -
+                        dec->H.columns[k][l];
                     messages_c[k][l] = tanh(dec->v_to_c[k][l][j] / 2);
                 }
             extrinsic(dec->tree, INDEX * BLOCK_WEIGHT, mult);
             for (index_t k = 0; k < INDEX; ++k)
                 for (index_t l = 0; l < BLOCK_WEIGHT; ++l) {
-                    index_t j = ((i > dec->Hcolumns[k][l]) ? 0 : BLOCK_LENGTH) +
-                                i - dec->Hcolumns[k][l];
+                    index_t j =
+                        ((i > dec->H.columns[k][l]) ? 0 : BLOCK_LENGTH) + i -
+                        dec->H.columns[k][l];
                     dec->c_to_v[k][l][j] = SATURATE(
                         2 * atanh(messages_c[k][l]) * BP_SCALE, BP_SATURATE);
                 }

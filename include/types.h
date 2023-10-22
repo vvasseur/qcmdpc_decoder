@@ -75,10 +75,14 @@ typedef struct {
     bit_t counter;
 } pos_counter_t;
 
+typedef struct {
+    index_t columns[INDEX][BLOCK_WEIGHT];
+    index_t rows[INDEX][BLOCK_WEIGHT];
+} code_t;
+
 /* State of the decoder */
 struct decoder {
-    index_t Hcolumns[INDEX][BLOCK_WEIGHT];
-    index_t Hrows[INDEX][BLOCK_WEIGHT];
+    code_t H;
     bit_t bits[INDEX][BLOCK_LENGTH];
     bit_t syndrome[2 * SIZE_AVX] __attribute__((aligned(32)));
     bit_t e[INDEX][2 * SIZE_AVX] __attribute__((aligned(32)));
@@ -102,8 +106,7 @@ struct decoder {
 
 /* State of the decoder for belief propagation */
 struct decoder_bp {
-    index_t Hcolumns[INDEX][BLOCK_WEIGHT];
-    index_t Hrows[INDEX][BLOCK_WEIGHT];
+    code_t H;
     bit_t message[2 * SIZE_AVX] __attribute__((aligned(32)));
     bit_t codeword[INDEX][2 * SIZE_AVX] __attribute__((aligned(32)));
     bit_t bits[INDEX][2 * SIZE_AVX] __attribute__((aligned(32)));

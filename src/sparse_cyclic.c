@@ -80,6 +80,18 @@ void transpose(sparse_t dst, const sparse_t src, index_t weight,
     }
 }
 
+void transpose_columns(code_t *H) {
+    for (index_t i = 0; i < INDEX; ++i) {
+        transpose(H->rows[i], H->columns[i], BLOCK_WEIGHT, BLOCK_LENGTH);
+    }
+}
+
+void transpose_rows(code_t *H) {
+    for (index_t i = 0; i < INDEX; ++i) {
+        transpose(H->columns[i], H->rows[i], BLOCK_WEIGHT, BLOCK_LENGTH);
+    }
+}
+
 struct mult_t {
     dense_t y;
     dense_t z;

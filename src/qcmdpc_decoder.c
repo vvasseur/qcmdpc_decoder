@@ -200,23 +200,24 @@ void *process(void *arg) {
         random_message(dec, prng);
 #endif
 #if WEAK == 1
-        generate_weak_type1(dec->Hcolumns, prng);
+        generate_weak_type1(dec->H.columns, prng);
 #elif WEAK == 2
-        generate_weak_type2(dec->Hcolumns, prng);
+        generate_weak_type2(dec->H.columns, prng);
 #elif WEAK == 3
-        generate_weak_type3(dec->Hcolumns, prng);
+        generate_weak_type3(dec->H.columns, prng);
 #else
         for (index_t i = 0; i < INDEX; ++i) {
-            sparse_rand(dec->Hcolumns[i], BLOCK_WEIGHT, BLOCK_LENGTH, prng);
+            sparse_rand(dec->H.columns[i], BLOCK_WEIGHT, BLOCK_LENGTH, prng);
         }
 #endif
+        transpose_columns(&dec->H);
 
 #if ERROR_FLOOR == 1
-        near_codeword(e_block, dec->Hcolumns, prng);
+        near_codeword(e_block, dec->H.columns, prng);
 #elif ERROR_FLOOR == 2
-        near_codeword2(e_block, dec->Hcolumns, prng);
+        near_codeword2(e_block, dec->H.columns, prng);
 #elif ERROR_FLOOR == 3
-        codeword(e_block, dec->Hcolumns, prng);
+        codeword(e_block, dec->H.columns, prng);
 #else
         sparse_rand(e_block, ERROR_WEIGHT, INDEX * BLOCK_LENGTH, prng);
 #endif

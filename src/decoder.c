@@ -42,7 +42,7 @@ static bit_t get_counter(decoder_t dec, index_t index, index_t position) {
 
     index_t l;
     for (l = 0; l < BLOCK_WEIGHT; ++l) {
-        index_t i = offset + dec->Hcolumns[index][l];
+        index_t i = offset + dec->H.columns[index][l];
         if (i >= BLOCK_LENGTH) {
             offset -= BLOCK_LENGTH;
             break;
@@ -50,7 +50,7 @@ static bit_t get_counter(decoder_t dec, index_t index, index_t position) {
         counter += dec->syndrome[i];
     }
     for (; l < BLOCK_WEIGHT; ++l) {
-        index_t i = offset + dec->Hcolumns[index][l];
+        index_t i = offset + dec->H.columns[index][l];
         counter += dec->syndrome[i];
     }
     return counter;
@@ -61,7 +61,7 @@ static void flip_column(decoder_t dec, index_t index, index_t position) {
 
     index_t l;
     for (l = 0; l < BLOCK_WEIGHT; ++l) {
-        index_t i = offset + dec->Hcolumns[index][l];
+        index_t i = offset + dec->H.columns[index][l];
         if (i >= BLOCK_LENGTH) {
             offset -= BLOCK_LENGTH;
             break;
@@ -69,7 +69,7 @@ static void flip_column(decoder_t dec, index_t index, index_t position) {
         dec->syndrome[i] ^= 1;
     }
     for (; l < BLOCK_WEIGHT; ++l) {
-        index_t i = offset + dec->Hcolumns[index][l];
+        index_t i = offset + dec->H.columns[index][l];
         dec->syndrome[i] ^= 1;
     }
 }
@@ -87,14 +87,14 @@ static void compute_syndrome(decoder_t dec) {
     memset(dec->syndrome, 0, 2 * SIZE_AVX * sizeof(bit_t));
 #ifndef AVX
     for (index_t i = 0; i < INDEX; ++i) {
-        multiply_xor_mod2(dec->syndrome, dec->Hcolumns[i], dec->e[i],
+        multiply_xor_mod2(dec->syndrome, dec->H.columns[i], dec->e[i],
                           BLOCK_WEIGHT, BLOCK_LENGTH);
     }
 #else
     for (index_t i = 0; i < INDEX; ++i) {
         memcpy(dec->e[i] + BLOCK_LENGTH, dec->e[i],
                BLOCK_LENGTH * sizeof(bit_t));
-        multiply_xor_mod2_avx2(dec->syndrome, dec->Hrows[i], dec->e[i],
+        multiply_xor_mod2_avx2(dec->syndrome, dec->H.rows[i], dec->e[i],
                                BLOCK_WEIGHT, SIZE_AVX);
     }
 #endif
@@ -108,10 +108,10 @@ static void compute_counters(decoder_t dec) {
     for (index_t i = 0; i < INDEX; ++i) {
 #ifndef AVX
         memset(dec->counters[i], 0, BLOCK_LENGTH * sizeof(bit_t));
-        multiply_add(dec->counters[i], dec->Hrows[i], dec->syndrome,
+        multiply_add(dec->counters[i], dec->H.rows[i], dec->syndrome,
                      BLOCK_WEIGHT, BLOCK_LENGTH);
 #else
-        multiply_avx2(dec->counters[i], dec->Hcolumns[i], dec->syndrome,
+        multiply_avx2(dec->counters[i], dec->H.columns[i], dec->syndrome,
                       BLOCK_WEIGHT, SIZE_AVX);
 #endif
     }
@@ -119,9 +119,6 @@ static void compute_counters(decoder_t dec) {
 
 void init_decoder_error(decoder_t dec, const sparse_t e_block,
                         const sparse_t e2_block) {
-    for (index_t i = 0; i < INDEX; ++i) {
-        transpose(dec->Hrows[i], dec->Hcolumns[i], BLOCK_WEIGHT, BLOCK_LENGTH);
-    }
     dec->error_weight = ERROR_WEIGHT;
 
     {
@@ -435,7 +432,7 @@ static int qcmdpc_decode_sbs(decoder_t dec, int max_iter, prng_t prng) {
         int l;
         l = prng->random_lim(BLOCK_WEIGHT - 1, &prng->s0, &prng->s1);
 
-        int j = i + dec->Hrows[k][l];
+        int j = i + dec->H.rows[k][l];
         j = (j >= BLOCK_LENGTH) ? (j - BLOCK_LENGTH) : j;
 
         bit_t counter = get_counter(dec, k, j);
